@@ -12,6 +12,17 @@ namespace TaskManagementSystem
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Add CORS services and define a policy
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
+
             // Add services to the container.
 
             builder.Services.AddControllers();
@@ -43,6 +54,8 @@ namespace TaskManagementSystem
                 }
             }
 
+            // Apply the policy globally
+            app.UseCors("AllowAll");
             app.UseAuthorization();
 
 

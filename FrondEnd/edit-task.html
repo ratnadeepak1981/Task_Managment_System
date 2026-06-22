@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modify Task Details</title>
+    <!-- Reuses your existing stylesheets -->
+    <link rel="stylesheet" href="tasks.css">
+    <link rel="stylesheet" href="add-task.css">
+</head>
+<body>
+
+    <div class="nav">
+        <h2>Task Workspace</h2>
+        <a href="Tasks.html">← Cancel and Go Back</a>
+    </div>
+
+    <div class="form-container">
+        <h2>Modify Task Assignment</h2>
+        <form id="editTaskForm">
+            <!-- Hidden input to keep track of the active Task ID -->
+            <input type="hidden" id="editTaskId">
+            
+            <div class="form-group">
+                <label for="taskTitle">Task Title</label>
+                <input type="text" id="taskTitle" required>
+            </div>
+
+            <div class="form-group">
+                <label for="taskDescription">Description</label>
+                <textarea id="taskDescription" class="textarea-input" rows="4"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="userSelect">Assigned User</label>
+                <select id="userSelect" required>
+                    <option value="" disabled selected>Loading active users...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="taskStatus">Current Status</label>
+                <select id="taskStatus">
+                    <option value="Todo">Todo</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Done">Done</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-save" style="margin-top: 10px;">Save Changes</button>
+        </form>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:5108/api";
+        let loadedUsers = [];
+        let currentTaskId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Parse the Task ID directly out of the browser URL string (?taskId=X)
+            const urlParams = new URLSearchParams(window.location.search);
+            currentTaskId = urlParams.get('taskId');
+
+            if (!currentTaskId) {
+                alert("No Task ID was specified in the URL path parameters.");
+                window.location.href = "Tasks.html";
+                return;
+            }
+
+            document.getElementById('editTaskId').value = currentTaskId;
+
+            // 2. Load dependencies sequentially
+            await loadUsersDropdown();
+            await loadTaskDetailsFromServer(currentTaskId);
+
+            // 3. Intercept form execution workflow
+            document.getElementById('editTaskForm').addEventListener('submit', handleTaskUpdate);
+        });
+
+        // Fetch live system users from your directory endpoint
+        async function loadUsersDropdown() {
+            const userSelect = document.getElementById('userSelect');
+            try {
+                const response = await fetch(`${API_URL}/User`);
+                if (!response.ok) throw new Error("Could not resolve user collection.");
+                
+                const jsonResult = await response.json();
+                loadedUsers = jsonResult.data || (Array.isArray(jsonResult) ? jsonResult : []);
+
+                userSelect.innerHTML = '<option value="" disabled>-- Select a team member --</option>';
+                loadedUsers.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.userId || user.id;
+                    option.innerText = user.userName || user.username;
+                    userSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error("User dropdown lookup crash:", error);
+                userSelect.innerHTML = '<option value="" disabled style="color:red;">Error loading system profiles.</option>';
+            }
+        }
+
+        // Fetch target task instance fields via GET /api/Task/{taskId}
+        async function loadTaskDetailsFromServer(id) {
+            try {
+                const response = await fetch(`${API_URL}/Task/${id}`);
+                if (!response.ok) throw new Error(`Task #${id} could not be resolved from database record.`);
+                
+                const jsonResult = await response.json();
+                
+                // Account for wrapped envelope responses (.data) vs raw objects
+                const task = jsonResult.data || jsonResult;
+
+                if (!task) throw new Error("Server returned an empty task data object.");
+
+                // Bind fields cleanly onto your input fields
+                document.getElementById('taskTitle').value = task.title || '';
+                document.getElementById('taskDescription').value = task.description || '';
+                
+                // Align user ID property select value index configurations
+                const mappedUserId = task.userId || task.id;
+                document.getElementById('userSelect').value = mappedUserId || "";
+
+                // Match status selection block casing structures
+                let targetStatus = "Todo";
+                const rawLower = (task.status || '').toLowerCase().trim();
+                if (['in progress', 'inprogress'].includes(rawLower)) targetStatus = "In Progress";
+                if (['done', 'completed'].includes(rawLower)) targetStatus = "Done";
+                document.getElementById('taskStatus').value = targetStatus;
+
+            } catch (error) {
+                console.error("Task detail mapping pipeline error:", error);
+                alert(`Error: ${error.message}`);
+                window.location.href = "Tasks.html";
+            }
+        }
+
+        // Send changes back using PUT /api/Task/{taskId} via FormData
+        async function handleTaskUpdate(e) {
+            e.preventDefault();
+
+            const selectedUserId = parseInt(document.getElementById('userSelect').value);
+            const matchingUser = loadedUsers.find(u => (u.userId || u.id) === selectedUserId);
+
+            try {
+                // Build a FormData envelope matching what [FromForm] targets in ASP.NET Core
+                const formData = new FormData();
+                formData.append('taskId', currentTaskId);
+                formData.append('title', document.getElementById('taskTitle').value.trim());
+                formData.append('description', document.getElementById('taskDescription').value.trim());
+                formData.append('status', document.getElementById('taskStatus').value);
+                formData.append('userId', selectedUserId);
+                formData.append('userName', matchingUser ? (matchingUser.userName || matchingUser.username) : "Unassigned");
+
+                const response = await fetch(`${API_URL}/Task/${currentTaskId}`, {
+                    method: 'PUT',
+                    // Note: NO Content-Type header is specified so the browser assigns the form boundary parameter automatically.
+                    body: formData 
+                });
+
+                if (!response.ok) {
+                    const errorDetails = await response.text();
+                    throw new Error(`Server tracking update failure (${response.status}): ${errorDetails}`);
+                }
+
+                alert("Task update changes saved successfully!");
+                window.location.href = "Tasks.html";
+
+            } catch (error) {
+                console.error("Task submission updating network execution error context:", error);
+                alert(`Error saving changes: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>

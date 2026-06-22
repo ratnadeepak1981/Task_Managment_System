@@ -1,0 +1,66 @@
+body { 
+    font-family: Arial, sans-serif; 
+    margin: 20px; 
+    background-color: #f4f4f9; 
+    color: #333; 
+}
+.nav-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1000px;
+    margin: 0 auto 20px auto;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 10px;
+}
+.nav-links a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+}
+.nav-links a:hover {
+    text-decoration: underline;
+}
+.dashboard-grid { 
+    max-width: 1000px; 
+    margin: auto; 
+    display: flex; 
+    gap: 20px; 
+    flex-wrap: wrap;
+}
+.card { 
+    flex: 1; 
+    min-width: 200px;
+    background: white; 
+    padding: 25px; 
+    border-radius: 8px; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+    text-align: center;
+    border-top: 5px solid #6c757d;
+}
+.card.todo { border-top-color: #ffc107; }
+.card.progress { border-top-color: #17a2b8; }
+.card.done { border-top-color: #28a745; }
+
+.card h3 {
+    margin: 0 0 10px 0;
+    color: #666;
+    text-transform: uppercase;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+.card .count {
+    font-size: 36px;
+    font-weight: bold;
+    color: #222;
+}
+.error-message {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 15px;
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    display: none;
+}

@@ -22,51 +22,75 @@ namespace TaskManagementSystem.Controllers
             IUserRepository userRepository = new UserRepository(configuration);
             _userService = new UserService(userRepository);
         }
-
-        // GET /api/user — returns all books with category names.
+       
+        // GET /api/user — returns all users
         [HttpGet]
-        public ActionResult<IEnumerable<UserResponseDto>> GetAllUsers()
+        public ActionResult<ApiResponse<IEnumerable<UserResponseDto>>> GetAllUsers()
         {
             var users = _userService.GetAllUsers();
-            var response = ApiResponse<IEnumerable<UserResponseDto>>.SuccessResponse(users, "Users retrieved successfully.");
+
+            if (users == null)
+            {
+                var validationErrors = new List<string>
+                {
+                        "No user exist ",
+                        "user table empty"
+                };
+            }
+            // Wrap the user list inside your generic ApiResponse wrapper
+            var response = ApiResponse<IEnumerable<UserResponseDto>>.SuccessResponse("Users retrieved successfully.", users);
+
             return Ok(response);
+            //return new JsonResult(response);
         }
 
         // GET /api/user — returns all tasks
         [HttpGet("{userId}")]
-        public ActionResult<IEnumerable<UserResponseDto>> GetUserById(int userId)
+        public ActionResult<ApiResponse<IEnumerable<UserResponseDto>>>GetUserById(int userId)
         {
             var user = _userService.GetUserById(userId);
             if (user == null)
             {
-                var errorResponse = ApiResponse<UserResponseDto>.FailureResponse($"User with ID {userId} not found.");
+                // Define the specific error list for your JSON format
+                var validationErrors = new List<string>
+                {
+                        $"User with ID {userId} not found.",
+                        "user not exist"
+                };
+                var errorResponse = ApiResponse<UserResponseDto>.FailureResponse($"User with ID {userId} not found.", validationErrors);
                 return NotFound(errorResponse);
             }
 
-            var response = ApiResponse<UserResponseDto>.SuccessResponse(user, "User profile retrieved.");
+            var response = ApiResponse<UserResponseDto>.SuccessResponse("User profile retrieved.",user);
             return Ok(response);
         }
 
         // GET /api/users/{userId}/tasks
         // FIXED: Route explicitly expanded to match required /api/users/{id}/tasks path
         [HttpGet("{userId:int}/tasks")]
-        public ActionResult<IEnumerable<UserWithTasksDto>> GetTasksByUserId(int userId)
+        public ActionResult<ApiResponse<IEnumerable<UserWithTasksDto>>> GetTasksByUserId(int userId)
         {
             var userWithTasks = _userService.GetTasksByUserId(userId);
             if (userWithTasks == null)
             {
-                var errorResponse = ApiResponse<UserWithTasksDto>.FailureResponse($"User with ID {userId} not found.");
+                // Define the specific error list for your JSON format
+                var validationErrors = new List<string>
+                {
+                        $"User {userId} not found.",
+                        "user not exist"
+                };
+                var errorResponse = ApiResponse<UserWithTasksDto>.FailureResponse($"User with ID {userId} not found.",validationErrors);
                 return NotFound(errorResponse);
             }
 
-            var response = ApiResponse<UserWithTasksDto>.SuccessResponse(userWithTasks, "User tasks retrieved.");
+            var response = ApiResponse<UserWithTasksDto>.SuccessResponse("User tasks retrieved.", userWithTasks);
             return Ok(response);
         }
 
         // POST /api/user — creates a new user.
         [HttpPost]
         [Consumes("multipart/form-data")] // Tells Swagger to render individual text boxes
-        public ActionResult<UserResponseDto> CreateUser([FromForm] CreateUserDto dto)
+        public ActionResult<ApiResponse<UserResponseDto>> CreateUser([FromForm] CreateUserDto dto)
         {
             if (!_userService.CreateUser(dto, out var user, out var errorMessage))
             {
@@ -74,7 +98,7 @@ namespace TaskManagementSystem.Controllers
                 return BadRequest(errorResponse);
             }
 
-            var response = ApiResponse<UserResponseDto>.SuccessResponse(user!, "User created successfully.");
+            var response = ApiResponse<UserResponseDto>.SuccessResponse("User created successfully.", user!);
             return Ok(response);
         }
     }

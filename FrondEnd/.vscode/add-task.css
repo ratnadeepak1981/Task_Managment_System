@@ -1,0 +1,27 @@
+/* Layout panel container styling */
+.form-container {
+    max-width: 500px;
+    margin: 40px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.form-container h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #1e1b4b;
+}
+
+/* Multiline input element scaling overrides */
+.textarea-input {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    resize: vertical;
+    font-family: sans-serif;
+    font-size: 14px;
+}

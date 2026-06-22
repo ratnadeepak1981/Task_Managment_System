@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Management Dashboard</title>
+    <!-- Linked external stylesheet -->
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+
+    <div class="nav-header">
+        <h1>Metrics Dashboard</h1>
+        <div class="nav-links">
+            <a href="index.html">← Back to Task Manager</a>
+        </div>
+    </div>
+
+    <div id="errorBanner" class="error-message"></div>
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Total Tasks</h3>
+            <div id="countTotal" class="count">0</div>
+        </div>
+        <div class="card todo">
+            <h3>Todo</h3>
+            <div id="countTodo" class="count">0</div>
+        </div>
+        <div class="card progress">
+            <h3>In Progress</h3>
+            <div id="countProgress" class="count">0</div>
+        </div>
+        <div class="card done">
+            <h3>Done</h3>
+            <div id="countDone" class="count">0</div>
+        </div>
+    </div>
+
+    <!-- Scripts Injection -->
+    <script src="TaskService.js"></script>
+    <script>
+        const URL = "http://localhost:5108/api"; 
+        const taskService = new TaskService(URL);
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const errorBanner = document.getElementById('errorBanner');
+            const countTotal = document.getElementById('countTotal');
+            const countTodo = document.getElementById('countTodo');
+            const countProgress = document.getElementById('countProgress');
+            const countDone = document.getElementById('countDone');
+
+            try
+            {
+                const tasks = await taskService.getAllTasks();
+                
+                if (!tasks) 
+                {
+                   console.log("Unable to read task collection data stream from server.");
+                }
+                
+                const taskArray = Array.isArray(tasks) ? tasks : [tasks];
+                let todoCounter = 0;
+                let progressCounter = 0;
+                let doneCounter = 0;
+
+                taskArray.forEach(task => {
+                    const statusStr = (task.status || '').trim().toLowerCase();
+                    
+                    if (statusStr === 'todo' || statusStr === 'pending') {
+                        todoCounter++;
+                    } else if (statusStr === 'in progress' || statusStr === 'inprogress') {
+                        progressCounter++;
+                    } else if (statusStr === 'done' || statusStr === 'completed') {
+                        doneCounter++;
+                    }
+                });
+
+                countTotal.innerText = taskArray.length;
+                countTodo.innerText = todoCounter;
+                countProgress.innerText = progressCounter;
+                countDone.innerText = doneCounter;
+
+            }
+            catch (err) 
+            {
+                console.error("[Dashboard Load Error]", err);
+                errorBanner.innerText = "Error loading metrics: Please verify your ASP.NET Core API server is online.";
+                errorBanner.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -6,7 +6,8 @@ class UserService {
     // GET /api/user
     async getAllUsers()
     {
-        try {
+        try
+        {
             const response = await fetch(`${this.baseUrl}/user`);
 
             if (!response.ok)

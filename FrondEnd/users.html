@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+    <link rel="stylesheet" href="users.css">
+</head>
+<body>
+
+    <div class="nav-header">
+        <h1>User Directory</h1>
+        <div class="nav-links">
+            <a href="index.html">← Back to Task Manager</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Left Panel: Form -->
+        <div class="panel">
+            <h2>Create User</h2>
+            <form id="userForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required placeholder="e.g., john_doe">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" required placeholder="e.g., john@example.com">
+                </div>
+                <button type="submit">Save User</button>
+            </form>
+        </div>
+
+        <!-- Right Panel: Table View -->
+        <div class="panel wide">
+            <h2>All System Users</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <!-- Dynamic Rows Injected Here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Task Viewer Modal Window -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModal">&times;</span>
+            <h2 id="modalTitle">Assigned Tasks</h2>
+            <div id="modalTaskContainer">Loading tasks...</div>
+        </div>
+    </div>
+
+    <!-- Scripts Integration Layer -->
+    <script src="UserService.js"></script>
+    <script>
+        const URL = "http://localhost:5108/api";
+        const userService = new UserService(URL);
+
+        // Core UI References
+        const userForm = document.getElementById('userForm');
+        const usernameInput = document.getElementById('username');
+        const emailInput = document.getElementById('email');
+        const userTableBody = document.getElementById('userTableBody');
+        
+        const taskModal = document.getElementById('taskModal');
+        const closeModal = document.getElementById('closeModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalTaskContainer = document.getElementById('modalTaskContainer');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAllUsers();
+
+            // Intercept user registration
+            userForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await handleUserCreation();
+            });
+
+            // Handle closing modal
+            closeModal.addEventListener('click', () => taskModal.style.display = 'none');
+            window.addEventListener('click', (e) => {
+                if (e.target === taskModal) taskModal.style.display = 'none';
+            });
+        });
+
+        async function loadAllUsers() 
+        {
+            try 
+            {
+                const users = await userService.getAllUsers();
+                renderUserTable(users);
+            }
+            catch (error)
+            {
+                console.error("Failed fetching user accounts:", error);
+            }
+        }
+
+        function renderUserTable(users) {
+            
+            userTableBody.innerHTML = '';
+            if (!users || users.length === 0) {
+                userTableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No users registered yet.</td></tr>`;
+                return;
+            }
+            const userArray = Array.isArray(users.data) ? users.data : [users.data];
+
+            
+            userArray.forEach(user =>
+            {
+             
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${user.userId || user.userId}</td>
+                    <td><strong>${user.userName}</strong></td>
+                    <td>${user.userEmail}</td>
+                    <td>
+                        <button onclick="viewUserTasks(${user.userId || user.id}, '${user.username}')">View Tasks</button>
+                    </td>
+                `;
+                userTableBody.appendChild(tr);
+            });
+        }
+
+        async function handleUserCreation()
+        {
+                // 1. Structure the keys to match your backend expectation
+                const userDto =
+                {
+                    userName: usernameInput.value.trim(),
+                    userEmail: emailInput.value.trim()
+                };
+
+                try 
+                {
+                    // 2. Call your service method (it automatically converts this to FormData)
+                    const result = await userService.createUser(userDto);
+                    
+                    // 3. Your service returns null if the response fails
+                    if (!result) {
+                        throw new Error("Server rejected registration. Check your console logs for details.");
+                    }
+                   
+                    userForm.reset();
+                    await loadAllUsers();
+                }
+                catch (error)
+                {
+                    alert(`Error creating user: ${error.message}`);
+                }
+}
+
+        // Global scoped event handler for inline table actions
+        async function viewUserTasks(userId, username)
+        {
+            modalTitle.innerText = `Tasks for ${username}`;
+            modalTaskContainer.innerHTML = 'Loading tasks...';
+            taskModal.style.display = 'flex';
+
+            try {
+                // Reuses your existing completed getTasksByUserId method inside UserService
+                const tasks = await userService.getTasksByUserId(userId);
+                
+                modalTaskContainer.innerHTML = '';
+                if (!tasks || tasks.length === 0) {
+                    modalTaskContainer.innerHTML = '<p>This user has no tasks assigned.</p>';
+                    return;
+                }
+                // 2. Target the nested data array directly
+               //const taskArray = Array.isArray(tasks.data) ? tasks.data : [tasks.data];
+              
+                const taskArray = Array.isArray(tasks) ? tasks : [tasks];
+                taskArray.forEach(task =>
+                {
+                    const div = document.createElement('div');
+                    div.className = 'task-mini-card';
+                    div.innerHTML = `
+                        <h4>${task.title || 'Untitled'}</h4>
+                        <p style="margin:4px 0; font-size:13px; color:#555;">${task.description || 'No description provided.'}</p>
+                        <small>Status: <strong>${task.status || 'Pending'}</strong></small>
+                    `;
+                    modalTaskContainer.appendChild(div);
+                });
+            } catch (error) {
+                modalTaskContainer.innerHTML = `<p style="color:red;">Error loading tasks for this user.</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

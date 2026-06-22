@@ -4,7 +4,8 @@ class TaskService {
     }
 
     // GET /api/task
-    async getAllTasks() {
+    async getAllTasks()
+     {
         try
         {
             const response = await fetch(this.baseUrl);
@@ -28,7 +29,8 @@ class TaskService {
     }
 
     // GET /api/task/{taskId}
-    async getTaskById(taskId) {
+    async getTaskById(taskId)
+     {
         try {
             const response = await fetch(`${this.baseUrl}/${taskId}`);
             
@@ -46,8 +48,10 @@ class TaskService {
     }
 
     // GET /api/task/taskName?taskName=XYZ
-    async getTaskByName(name) {
-        try {
+    async getTaskByName(name) 
+    {
+        try 
+        {
             const response = await fetch(`${this.baseUrl}/taskName?taskName=${encodeURIComponent(name)}`);
             
             if (!response.ok) {
@@ -64,8 +68,10 @@ class TaskService {
     }
 
     // POST /api/task (multipart/form-data)
-    async createTask(taskDto) {
-        try {
+    async createTask(taskDto) 
+    {
+        try
+        {
             const formData = new FormData();
             formData.append('Title', taskDto.title);
             formData.append('Description', taskDto.description);
@@ -83,15 +89,19 @@ class TaskService {
             }
 
             return await response.json();
-        } catch (error) {
+        }
+        catch (error)
+        {
             console.error("[Network Error] Cannot connect to the server to create a new task.");
             return null;
         }
     }
 
     // PUT /api/task/{taskId} (multipart/form-data)
-    async updateTask(taskId, taskDto) {
-        try {
+    async updateTask(taskId, taskDto)
+    {
+        try
+        {
             const formData = new FormData();
             formData.append('Title', taskDto.title);
             formData.append('Description', taskDto.description);
@@ -109,15 +119,19 @@ class TaskService {
             }
 
             return await response.json();
-        } catch (error) {
+        }
+        catch (error)
+        {
             console.error(`[Network Error] Cannot connect to the server to update task ID ${taskId}.`);
             return null;
         }
     }
 
     // PATCH /api/task (multipart/form-data)
-    async updateTaskStatus(taskId, newStatus) {
-        try {
+    async updateTaskStatus(taskId, newStatus)
+    {
+        try
+        {
             const formData = new FormData();
             formData.append('TaskId', taskId);
             formData.append('Status', newStatus);
@@ -134,20 +148,25 @@ class TaskService {
             }
 
             return await response.json();
-        } catch (error) {
+        } 
+        catch (error)
+        {
             console.error(`[Network Error] Cannot connect to the server to update status for task ID ${taskId}.`);
             return null;
         }
     }
 
     // DELETE /api/task/{taskId}
-    async deleteTask(taskId) {
-        try {
+    async deleteTask(taskId)
+    {
+        try
+        {
             const response = await fetch(`${this.baseUrl}/${taskId}`, {
                 method: 'DELETE'
             });
 
-            if (!response.ok) {
+            if (!response.ok) 
+            {
                 const errData = await response.json().catch(() => ({}));
                 console.error(`[Task Service Error] Deletion failed for task (ID: ${taskId}). Status: ${response.status}. Reason: ${errData.message || 'Could not delete task.'}`);
                 return null;
