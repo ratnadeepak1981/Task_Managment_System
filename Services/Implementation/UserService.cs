@@ -1,7 +1,8 @@
 ﻿using TaskManagementSystem.Repositories.Interface;
-using TaskManagementSystem.DTO;
 using TaskManagementSystem.Models;
 using TaskManagementSystem.Services.Interface;
+using TaskManagementSystem.DTO.Request;
+using TaskManagementSystem.DTO.Response;
 namespace TaskManagementSystem.Services.Implementation
 {
     public class UserService : IUserService
@@ -103,7 +104,9 @@ namespace TaskManagementSystem.Services.Implementation
                 Title = task.Title,
                 Description = task.Description,
                 Status = task.Status,
-                CreatedDate = task.CreatedDate
+                CreatedDate = task.CreatedDate,
+                UserId= task.UserId,
+                UserName= task.UserName
 
             };
         }

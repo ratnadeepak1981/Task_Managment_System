@@ -190,7 +190,8 @@ namespace TaskManagementSystem.Repositories.Implementation
                 Description = reader.GetString(reader.GetOrdinal("Description")),
                 Status = reader.GetString(reader.GetOrdinal("Status")),
                 CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
-                UserId = reader.GetInt32(reader.GetOrdinal("UserId"))
+                UserId = reader.GetInt32(reader.GetOrdinal("UserId")),
+                UserName= reader.GetString(reader.GetOrdinal("UserName"))
             };
         }
     }

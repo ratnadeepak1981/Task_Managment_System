@@ -86,28 +86,43 @@ namespace TaskManagementSystem.Repositories.Implementation
             };
         }
 
-        public TaskItem? GetTaskByName(string taskName)
+        public List<TaskItem>? GetTaskByName(string taskName)
         {
+            List<TaskItem> tasks = new List<TaskItem>();
             if (string.IsNullOrEmpty(_connectionString))
             {
                 return null;
             }
 
-            const string sql = """
+            string sql = """
             SELECT T.TaskId, T.Title, T.Description, T.Status, T.CreatedDate, U.UserId, U.UserName
             FROM Tasks T
             INNER JOIN Users U ON T.UserId = U.UserId
-            WHERE T.Title = @Title
             """;
+
+            // Use LIKE operator for partial matching
+            if (!string.IsNullOrEmpty(taskName))
+            {
+                sql += "  WHERE T.Title LIKE @Title";
+            }
 
             using var connection = new SqlConnection(_connectionString);
             connection.Open();
 
             using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@Title", taskName);
 
+            if (!string.IsNullOrEmpty(taskName))
+            {
+                // Wrap search term with wildcard percentages
+                command.Parameters.AddWithValue("@Title", $"%{taskName}%");
+            }
             using var reader = command.ExecuteReader();
-            return reader.Read() ? MapTask(reader) : null;
+            while (reader.Read())
+            {
+                tasks.Add(MapTask(reader));
+            }
+
+            return tasks;
         }
       
         public TaskItem Add(TaskItem task)

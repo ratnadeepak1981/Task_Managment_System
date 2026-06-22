@@ -1,4 +1,5 @@
-﻿using TaskManagementSystem.DTO;
+﻿using TaskManagementSystem.DTO.Request;
+using TaskManagementSystem.DTO.Response;
 using TaskManagementSystem.Models;
 namespace TaskManagementSystem.Services.Interface
 {

@@ -1,4 +1,5 @@
-﻿using TaskManagementSystem.DTO;
+﻿using TaskManagementSystem.DTO.Request;
+using TaskManagementSystem.DTO.Response;
 
 namespace TaskManagementSystem.Services.Interface
 {
@@ -8,7 +9,7 @@ namespace TaskManagementSystem.Services.Interface
         public IEnumerable<TaskItemResponseDto> GetAllTasks();
         public TaskItemResponseDto? GetTaskById(int taskId);
 
-        public TaskItemResponseDto? GetTaskByName(string taskName);
+        public List<TaskItemResponseDto>? GetTaskByName(string taskName);
         // 2. Creation usually returns the basic profile
         bool CreateTask(CreateTaskItemDto dto, out TaskItemResponseDto? user, out string errorMessage);
 

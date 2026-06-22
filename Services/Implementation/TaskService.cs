@@ -1,20 +1,23 @@
 ﻿using Microsoft.Data.SqlClient;
 using System.Threading.Tasks;
-using TaskManagementSystem.DTO;
+using TaskManagementSystem.DTO.Request;
+using TaskManagementSystem.DTO.Response;
 using TaskManagementSystem.Models;
 using TaskManagementSystem.Repositories.Implementation;
 using TaskManagementSystem.Repositories.Interface;
 using TaskManagementSystem.Services.Interface;
+using static Microsoft.Data.SqlClient.Internal.SqlClientEventSource;
 
 namespace TaskManagementSystem.Services.Implementation
 {
     public class TaskService : ITaskService
     {
         private readonly ITaskRepository _taskRepository;
-
-        public TaskService(ITaskRepository taskRepository)
+        readonly IUserRepository _userRepository; // Add your user repository dependency
+        public TaskService(ITaskRepository taskRepository, IUserRepository userRepository)
         {
             _taskRepository = taskRepository;
+            _userRepository = userRepository;
         }
 
         public IEnumerable<TaskItemResponseDto> GetAllTasks()
@@ -34,16 +37,16 @@ namespace TaskManagementSystem.Services.Implementation
             return MapToResponseDto(task);
         }
 
-        public TaskItemResponseDto? GetTaskByName(string taskName)
+        public List<TaskItemResponseDto>? GetTaskByName(string taskName)
         {
-            var task = _taskRepository.GetTaskByName(taskName);
+            var tasks = _taskRepository.GetTaskByName(taskName);
 
-            if (task == null)
+            if (tasks== null)
             {
                 return null;
             }
             //return task;
-            return MapToResponseDto(task);
+           return tasks.Select(MapToResponseDto).ToList();
         }
         public bool CreateTask(CreateTaskItemDto dto, out TaskItemResponseDto? task, out string errorMessage)
         {
@@ -72,15 +75,18 @@ namespace TaskManagementSystem.Services.Implementation
                 errorMessage = "Task User Id is required.";
                 return false;
             }
-            /*
-            var newTask = new TaskItem
+            var user = _userRepository.GetUserById(dto.UserId);
+           
+            if (user == null)
             {
-                Title = dto.Title.Trim(),
-                Description = dto.Description.Trim(),
-                Status = dto.Status.Trim(),
-                UserId=dto.UserId
-            };
-            */
+                errorMessage = $"User with ID {dto.UserId} does not exist.";
+                return false;
+            }
+            if (dto.Status is not ("Todo" or "In Progress" or "Done"))
+            {
+                errorMessage = "Task Status is invalid. It must be 'Todo', 'In Progress', or 'Done'.";
+                return false;
+            }
             // 2. Map Input DTO to Entity (Separate Method)
             var newTask = MapToTaskItem(dto);
 
@@ -94,32 +100,13 @@ namespace TaskManagementSystem.Services.Implementation
             }
 
             // 4. Map Saved Entity to Response DTO (Separate Method)
-            //task = MapToResponseDto(createdTask);
             if (createdTask != null)
             {
-                /*
-                var mappedTask = new TaskItemResponseDto
-                {
-                    TaskId = createdTask.TaskId,
-                    Title = createdTask.Title,
-                    Description = createdTask.Description,
-                    Status = createdTask.Status,
-                    CreatedDate = createdTask.CreatedDate,
-                    UserId = createdTask.UserId,
-                    UserName = createdTask.UserName,
-                };                                  
-                */
-                // task = mappedTask;
                 task = MapToResponseDto(createdTask);
             }
      
             return true;
-            /*
-            var createdTask = _taskRepository.Add(newTask);
-            //task = createdTask;
-            task = MapToTaskItem(createdTask);
-            return true;
-            */
+          
         }
 
         public bool UpdateTask(int taskId, UpdateTaskItemDto dto, out TaskItemResponseDto? task, out string errorMessage)
@@ -169,6 +156,10 @@ namespace TaskManagementSystem.Services.Implementation
                 errorMessage = "Task Status is required.";
                 return false;
             }
+            if (taskToUpdate != null)
+            {
+                task = MapToResponseDto(taskToUpdate);
+            }
             return true;
         }
         public bool UpdateTaskStatus(int taskId, ChangeStatusDto dto, out TaskItemResponseDto? task, out string errorMessage)
@@ -186,7 +177,6 @@ namespace TaskManagementSystem.Services.Implementation
             bool isStatusUpdated = _taskRepository.UpdateStatus(taskId,dto.Status );
             return isStatusUpdated;
         }
-
         public bool DeleteTask(int taskId, out TaskItemResponseDto? task, out string errorMessage)
         {
             errorMessage = string.Empty;
@@ -196,9 +186,22 @@ namespace TaskManagementSystem.Services.Implementation
                 errorMessage = "A valid Task Id is required.";
                 return false;
             }
+            var taskToDelete = _taskRepository.GetTaskById(taskId);
+            if (taskToDelete == null)
+            {
+                errorMessage = $"Task with ID {taskId} was not found.";
+                return false;
+            }
+            bool isTaskDeleted = _taskRepository.Delete(taskId);
+            if (!isTaskDeleted)
+            {
+                errorMessage = "Failed to delete the task from the database.";
+                return false;
+            }
 
-           bool isTaskDeleted = _taskRepository.Delete(taskId);
-            return isTaskDeleted;
+            // 3. Map the fetched task entity to your Response DTO
+            task = MapToResponseDto(taskToDelete);
+            return true;
         }
         private static TaskItemResponseDto MapToResponseDto(TaskItem taskItem)
         {

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using TaskManagementSystem.DTO;
+using TaskManagementSystem.DTO.Request;
+using TaskManagementSystem.DTO.Response;
 using TaskManagementSystem.Models;
 using TaskManagementSystem.Repositories.Implementation;
 using TaskManagementSystem.Repositories.Interface;
@@ -27,7 +28,8 @@ namespace TaskManagementSystem.Controllers
         public ActionResult<IEnumerable<UserResponseDto>> GetAllUsers()
         {
             var users = _userService.GetAllUsers();
-            return Ok(users);
+            var response = ApiResponse<IEnumerable<UserResponseDto>>.SuccessResponse(users, "Users retrieved successfully.");
+            return Ok(response);
         }
 
         // GET /api/user — returns all tasks
@@ -37,9 +39,12 @@ namespace TaskManagementSystem.Controllers
             var user = _userService.GetUserById(userId);
             if (user == null)
             {
-                return NotFound(new { message = $"User with ID {userId} not found." });
+                var errorResponse = ApiResponse<UserResponseDto>.FailureResponse($"User with ID {userId} not found.");
+                return NotFound(errorResponse);
             }
-            return Ok(user);
+
+            var response = ApiResponse<UserResponseDto>.SuccessResponse(user, "User profile retrieved.");
+            return Ok(response);
         }
 
         // GET /api/users/{userId}/tasks
@@ -47,12 +52,15 @@ namespace TaskManagementSystem.Controllers
         [HttpGet("{userId:int}/tasks")]
         public ActionResult<IEnumerable<UserWithTasksDto>> GetTasksByUserId(int userId)
         {
-            var user = _userService.GetTasksByUserId(userId);
-            if (user == null)
+            var userWithTasks = _userService.GetTasksByUserId(userId);
+            if (userWithTasks == null)
             {
-                return NotFound(new { message = $"User with ID {userId} not found." });
+                var errorResponse = ApiResponse<UserWithTasksDto>.FailureResponse($"User with ID {userId} not found.");
+                return NotFound(errorResponse);
             }
-            return Ok(user);
+
+            var response = ApiResponse<UserWithTasksDto>.SuccessResponse(userWithTasks, "User tasks retrieved.");
+            return Ok(response);
         }
 
         // POST /api/user — creates a new user.
@@ -62,13 +70,12 @@ namespace TaskManagementSystem.Controllers
         {
             if (!_userService.CreateUser(dto, out var user, out var errorMessage))
             {
-                return BadRequest(new { message = errorMessage });
+                var errorResponse = ApiResponse<UserResponseDto>.FailureResponse(errorMessage ?? "Failed to create user.");
+                return BadRequest(errorResponse);
             }
 
-            return CreatedAtAction(nameof(GetAllUsers), new { id = user!.UserId }, user);
-
-            // FIXED: Changed GetAllUsers to GetUserById, and matched the parameter name 'userId'
-            //return CreatedAtAction(nameof(GetUserById), new { userId = user!.UserId }, user);
+            var response = ApiResponse<UserResponseDto>.SuccessResponse(user!, "User created successfully.");
+            return Ok(response);
         }
     }
 }

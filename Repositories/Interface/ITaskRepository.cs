@@ -11,6 +11,6 @@ namespace TaskManagementSystem.Repositories.Interface
         public bool Update(int taskid,TaskItem task);
         public bool UpdateStatus(int taskId, string status);
         public bool Delete(int taskId);
-        public TaskItem? GetTaskByName(string taskName);
+        public List<TaskItem>? GetTaskByName(string taskName);
     }
 }

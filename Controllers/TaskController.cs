@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using TaskManagementSystem.DTO;
+using TaskManagementSystem.DTO.Request;
+using TaskManagementSystem.DTO.Response;
 using TaskManagementSystem.Repositories.Implementation;
 using TaskManagementSystem.Repositories.Interface;
 using TaskManagementSystem.Services.Implementation;
@@ -20,7 +21,8 @@ namespace TaskManagementSystem.Controllers
         public TaskController(IConfiguration configuration)
         {
             ITaskRepository taskRepository = new TaskRepository(configuration);
-            _taskService = new TaskService(taskRepository);
+            IUserRepository userRepository = new UserRepository(configuration);
+            _taskService = new TaskService(taskRepository,userRepository);
         }
         // GET /api/task — returns all tasks
         [HttpGet]
@@ -42,8 +44,8 @@ namespace TaskManagementSystem.Controllers
         }
 
         // GET /api/task/search/{taskName}
-        [HttpGet("search/{taskName}")] // Changed route prefix to prevent ambiguitys
-        public ActionResult<IEnumerable<TaskItemResponseDto>> GetTaskByName(string taskName)
+        [HttpGet("taskName")] // Changed route prefix to prevent ambiguitys
+        public ActionResult<IEnumerable<TaskItemResponseDto>> GetTaskByName([FromQuery] string ? taskName=null)
         {
             var task = _taskService.GetTaskByName(taskName);
             if (task == null)
@@ -52,6 +54,8 @@ namespace TaskManagementSystem.Controllers
             }
             return Ok(task);
         }
+
+       
 
         // POST /api/task — creates a new user.
         [HttpPost]
@@ -67,18 +71,18 @@ namespace TaskManagementSystem.Controllers
             return CreatedAtAction(nameof(GetTaskById), new { taskId = createdTask!.TaskId }, createdTask);
 
         }
-
+  
         // PUT /api/task/{taskId}
-        [HttpPut("{taskId:int}")] // Added route parameter
+        [HttpPut("{taskId:int}")] // updates an entire task resource
         [Consumes("multipart/form-data")] // Tells Swagger to render individual text boxes
-        public ActionResult<TaskItemResponseDto> UpdateTask(int TaskId,[FromForm] UpdateTaskItemDto dto)
+        public ActionResult<TaskItemResponseDto> UpdateTask(int taskId,[FromForm] UpdateTaskItemDto dto)
         {
-            if (!_taskService.UpdateTask(TaskId,dto, out var updatedTask, out var errorMessage))
+            if (!_taskService.UpdateTask(taskId,dto, out var updatedTask, out var errorMessage))
             {
                 return BadRequest(new { message = errorMessage });
             }
 
-            return CreatedAtAction(nameof(GetTaskById), new { taskId = updatedTask!.TaskId }, updatedTask);
+               return Ok(updatedTask); 
 
         }
 
@@ -96,21 +100,24 @@ namespace TaskManagementSystem.Controllers
             return CreatedAtAction(nameof(GetTaskById), new { taskId = updatedTask!.TaskId }, updatedTask);
 
         }
-
-        // Delete /api/task — creates a new user.
-        [HttpDelete]
-        [Consumes("multipart/form-data")] // Tells Swagger to render individual text boxes
-        public ActionResult<TaskItemResponseDto> DeleteTask(int TaskId,[FromForm] TaskItemResponseDto dto)
+        
+        // 1. Fixed Route Path: Added "{taskId:int}" route parameter to match standard DELETE endpoints
+        [HttpDelete("{taskId:int}")]
+        public ActionResult<TaskItemResponseDto> DeleteTask(int taskId)
         {
-            if (!_taskService.DeleteTask(TaskId,out dto,  out string errorMessage))
+            // 2. Clear Variable Passing: Let the 'out' parameter initialize 'deletedTask' directly
+            if (!_taskService.DeleteTask(taskId, out var deletedTask, out var errorMessage))
             {
+                // 3. Conditional Error Handling: Return 404 if not found, 400 for bad input
+                if (errorMessage.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                {
+                    return NotFound(new { message = errorMessage });
+                }
                 return BadRequest(new { message = errorMessage });
             }
 
-            return NoContent();
-
-
-
+            // 4. Exact Return Matching: Successfully returns HTTP 200 OK along with the deleted object data
+            return Ok(deletedTask);
         }
 
     }

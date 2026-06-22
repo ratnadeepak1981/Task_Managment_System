@@ -1,4 +1,4 @@
-﻿namespace TaskManagementSystem.DTO
+﻿namespace TaskManagementSystem.DTO.Request
 {
     public class ChangeStatusDto
     {
