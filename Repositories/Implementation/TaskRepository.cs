@@ -76,7 +76,11 @@ namespace TaskManagementSystem.Repositories.Implementation
             {
                 TaskId = reader.GetInt32(reader.GetOrdinal("TaskId")),
                 Title = reader.GetString(reader.GetOrdinal("Title")),
-                Description = reader.GetString(reader.GetOrdinal("Description")),
+
+                //Description = reader.GetString(reader.GetOrdinal("Description")),
+                // 2. Check for DBNull. If true, assign null (or string.Empty)
+                Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
+
                 Status = reader.GetString(reader.GetOrdinal("Status")),
                 CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
 
@@ -238,6 +242,7 @@ namespace TaskManagementSystem.Repositories.Implementation
                 return false;
             }
         }
+
         public bool Delete(int taskId)
         {
             if (string.IsNullOrEmpty(_connectionString))

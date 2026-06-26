@@ -14,15 +14,10 @@ namespace TaskManagementSystem.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
-
-        // Manual wiring with `new` so students can see how layers connect.
-        // ASP.NET Core still supplies IConfiguration automatically.
-        public UserController(IConfiguration configuration)
+        public UserController(IUserService userservice)
         {
-            IUserRepository userRepository = new UserRepository(configuration);
-            _userService = new UserService(userRepository);
+             _userService = userservice;
         }
-       
         // GET /api/user — returns all users
         [HttpGet]
         public ActionResult<ApiResponse<IEnumerable<UserResponseDto>>> GetAllUsers()

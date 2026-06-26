@@ -51,7 +51,7 @@ namespace TaskManagementSystem.Repositories.Implementation
         {
             if (string.IsNullOrEmpty(_connectionString))
             {
-                return null;
+                return new User();
             }
 
             const string sql = """
@@ -64,9 +64,11 @@ namespace TaskManagementSystem.Repositories.Implementation
             connection.Open();
 
             using var command = new SqlCommand(sql, connection);
+
             command.Parameters.AddWithValue("@UserId", userId);
 
             using var reader = command.ExecuteReader();
+
             return reader.Read() ? MapUser(reader) : null;
         }
 
@@ -89,20 +91,21 @@ namespace TaskManagementSystem.Repositories.Implementation
             connection.Open();
 
             using var command = new SqlCommand(sql, connection);
+
             command.Parameters.AddWithValue("@UserId", userId);
 
             using var reader = command.ExecuteReader();
 
-            UserWithTasks? userWithTasks = null;
+            UserWithTasks? userWithTasks=null;
 
             // Loop through all joined rows(One User to Many Tasks)
-            // CORRECTED: Loop advances immediately, reads safe row by row
-            while (reader.Read())
+             while (reader.Read())
             {
                 // Instantiate container exactly once using data from first found row
                 if (userWithTasks == null)
                 {
-                    userWithTasks = MapUserTasksContainer(reader);
+                    userWithTasks = MapUserTasksContainer(reader); 
+              
                 }
 
                 // If user has tasks, parse and append them (safely avoids LEFT JOIN null rows)
@@ -114,6 +117,28 @@ namespace TaskManagementSystem.Repositories.Implementation
 
             // CORRECTED: Return payload container directly instead of advancing reader
             return userWithTasks;
+        }
+
+        public bool GetUserByEmail(string userEmail)
+        {
+            if (string.IsNullOrEmpty(_connectionString))
+            {
+                return false;
+            }
+
+            const string sql = "SELECT COUNT(1) FROM Users WHERE Email = @Email";
+
+            using var connection = new SqlConnection(_connectionString);
+            connection.Open();
+
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@Email", userEmail);
+
+            // ExecuteScalar returns the single number result of COUNT(1)
+            int count = Convert.ToInt32(command.ExecuteScalar());
+
+            // Returns true if the count is greater than 0
+            return count > 0;
         }
 
         public User Add(User user)
@@ -160,7 +185,6 @@ namespace TaskManagementSystem.Repositories.Implementation
                 UserId = reader.GetInt32(reader.GetOrdinal("UserId")),
                 UserName = reader.GetString(reader.GetOrdinal("UserName")),
                 UserEmail = reader.GetString(reader.GetOrdinal("Email")),
-         
             };
         }
        

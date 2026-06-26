@@ -1,8 +1,9 @@
-﻿using TaskManagementSystem.Repositories.Interface;
-using TaskManagementSystem.Models;
-using TaskManagementSystem.Services.Interface;
+﻿using Microsoft.IdentityModel.Tokens.Experimental;
 using TaskManagementSystem.DTO.Request;
 using TaskManagementSystem.DTO.Response;
+using TaskManagementSystem.Models;
+using TaskManagementSystem.Repositories.Interface;
+using TaskManagementSystem.Services.Interface;
 namespace TaskManagementSystem.Services.Implementation
 {
     public class UserService : IUserService
@@ -13,7 +14,7 @@ namespace TaskManagementSystem.Services.Implementation
         {
             _userRepository = userRepository;
         }
-
+       
         public IEnumerable<UserResponseDto> GetAllUsers()
         {
             return _userRepository.GetAll().Select(MapToResponseDto);
@@ -53,13 +54,36 @@ namespace TaskManagementSystem.Services.Implementation
                 errorMessage = "UserName is required.";
                 return false;
             }
-
+            else if (dto.UserName.Length > 100)
+            {
+                errorMessage = "UserName cannot exeed 100 characters.";
+                return false;
+            }
             if (string.IsNullOrWhiteSpace(dto.UserEmail))
             {
                 errorMessage = "UserEmail is required.";
                 return false;
             }
-
+            else if (dto.UserEmail.Length > 100)
+            {
+                errorMessage = "Email cannot exeed 100 characters..";
+                return false;
+            }
+            else if(_userRepository.GetUserByEmail(dto.UserEmail.Trim()))
+            {
+                errorMessage = $"Email id {dto.UserEmail} alteady exist";
+                return false;
+            }
+            else
+            {
+                // 3. Validate Email Format (Regex)
+                var emailRegex = new System.Text.RegularExpressions.Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+                if (!emailRegex.IsMatch(dto.UserEmail))
+                {
+                    errorMessage = "UserEmail format is invalid.";
+                    return false;
+                }
+            }
             var newUser = new User
             {
                 UserName = dto.UserName.Trim(),
@@ -77,7 +101,7 @@ namespace TaskManagementSystem.Services.Implementation
             {
                 UserId = user.UserId,
                 UserName = user.UserName,
-                userEmail = user.UserEmail
+                UserEmail = user.UserEmail
             };
         }
 

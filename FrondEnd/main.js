@@ -10,6 +10,9 @@ window.eventManager = new TaskEventManager(taskService);
 // Start App
 document.addEventListener('DOMContentLoaded', () => 
 {
-    window.eventManager.setupEventListeners();
-    window.eventManager.loadAllTasks();
+    // FIX: Only run setup if the current page actually has task management components
+    if (window.eventManager.taskListContainer || window.eventManager.taskForm) {
+        window.eventManager.setupEventListeners();
+        window.eventManager.loadAllTasks();
+    }
 });

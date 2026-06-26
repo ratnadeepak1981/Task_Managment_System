@@ -1,66 +1,160 @@
-body { 
-    font-family: Arial, sans-serif; 
-    margin: 20px; 
-    background-color: #f4f4f9; 
-    color: #333; 
+/* Blazor Server Blue Theme Design Variables */
+:root {
+    --blazor-blue: #1b6ec2;
+    --blazor-blue-dark: #124d88;
+    --sidebar-bg: #232733;
+    --sidebar-hover: #3a3f52;
+    --bg-light: #f7f9fa;
 }
-.nav-header {
+
+body { 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0; 
+    background-color: var(--bg-light); 
+    color: #333; 
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Blazor Layout Sidebar Navigation */
+.sidebar {
+    width: 250px;
+    background-color: var(--sidebar-bg);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.sidebar-brand {
+    background-color: #11141c;
+    padding: 1rem 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar-brand span {
+    color: #63a9f5;
+}
+
+.sidebar-nav {
+    padding: 1rem 0;
+    flex-grow: 1;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    color: #d7d7d7;
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: background 0.2s;
+}
+
+.nav-item:hover {
+    background-color: var(--sidebar-hover);
+    color: white;
+}
+
+.nav-item.active {
+    background-color: var(--blazor-blue);
+    color: white;
+}
+
+.nav-icon {
+    margin-right: 10px;
+}
+
+/* Main Workspace Section */
+.main-panel {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+.top-row {
+    background-color: #f7f7f7;
+    border-bottom: 1px solid #d6d5d5;
+    padding: 0.8rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    max-width: 1000px;
-    margin: 0 auto 20px auto;
-    border-bottom: 2px solid #ddd;
-    padding-bottom: 10px;
 }
-.nav-links a {
-    color: #007bff;
-    text-decoration: none;
-    font-weight: bold;
-}
-.nav-links a:hover {
-    text-decoration: underline;
-}
-.dashboard-grid { 
-    max-width: 1000px; 
-    margin: auto; 
-    display: flex; 
-    gap: 20px; 
-    flex-wrap: wrap;
-}
-.card { 
-    flex: 1; 
-    min-width: 200px;
-    background: white; 
-    padding: 25px; 
-    border-radius: 8px; 
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
-    text-align: center;
-    border-top: 5px solid #6c757d;
-}
-.card.todo { border-top-color: #ffc107; }
-.card.progress { border-top-color: #17a2b8; }
-.card.done { border-top-color: #28a745; }
 
-.card h3 {
-    margin: 0 0 10px 0;
-    color: #666;
-    text-transform: uppercase;
-    font-size: 14px;
-    letter-spacing: 0.5px;
-}
-.card .count {
-    font-size: 36px;
-    font-weight: bold;
+.top-row h1 {
+    font-size: 1.5rem;
+    margin: 0;
+    font-weight: 500;
     color: #222;
 }
+
+.user-info {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.content-body {
+    padding: 2rem;
+    max-width: 1200px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Blazor-style System Alerts */
 .error-message {
-    max-width: 1000px;
-    margin: 20px auto;
-    padding: 15px;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1.5rem;
     background-color: #f8d7da;
     color: #721c24;
     border: 1px solid #f5c6cb;
+    border-left: 5px solid #dc3545;
     border-radius: 4px;
     display: none;
+    font-size: 0.9rem;
+}
+
+/* Blazor Bootstrap Dashboard Grid */
+.dashboard-grid { 
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.card { 
+    background: white; 
+    padding: 1.5rem; 
+    border-radius: 4px; 
+    border: 1px solid #e3e6f0;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.05);
+    border-left: 4px solid var(--blazor-blue);
+}
+
+/* Specific Task State Accents Override Override */
+.card.todo { border-left-color: #ffc107; }
+.card.progress { border-left-color: #17a2b8; }
+.card.done { border-left-color: #28a745; }
+
+/* Font Branding Configurations */
+.card h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--blazor-blue);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1rem;
+}
+
+.card.todo h3 { color: #f6c23e; }
+.card.progress h3 { color: #36b9cc; }
+.card.done h3 { color: #1cc88a; }
+
+.card .count {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #5a5c69;
 }

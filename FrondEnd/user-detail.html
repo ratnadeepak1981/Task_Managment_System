@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Detail File Profile</title>
-    <!-- Links to shared components and unique panel layout rules -->
+    <title>User Detail Profile</title>
     <link rel="stylesheet" href="tasks.css">
     <link rel="stylesheet" href="user-detail.css">
 </head>
@@ -16,8 +15,15 @@
     </div>
 
     <div class="detail-container">
-        
-        <!-- Section A: Profile Account Information Overview Card -->
+        <!-- Section A: Profile Account Information -->
+          <!-- NEW: User Selection Search/Dropdown -->
+    <div class="search-section" style="margin-bottom: 20px; padding: 15px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+        <label for="userSelect" style="font-weight: bold; display: block; margin-bottom: 5px;">Select a User to View Tasks:</label>
+        <select id="userSelect" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #cbd5e1;">
+            <option value="">-- Search/Select User --</option>
+        </select>
+    </div>
+
         <div class="profile-card">
             <h2>Account Summary Information</h2>
             <div class="profile-info-grid">
@@ -27,11 +33,11 @@
                 </div>
                 <div class="info-item">
                     <span>Full Username Designation</span>
-                    <div id="lblUserName" style="font-size: 18px; font-weight: bold;">Loading account profile name...</div>
+                    <div id="lblUserName" style="font-size: 18px; font-weight: bold;">Loading...</div>
                 </div>
                 <div class="info-item">
                     <span>Electronic Email Address</span>
-                    <div id="lblUserEmail" style="color: #4f46e5;">Loading profile email pointer...</div>
+                    <div id="lblUserEmail" style="color: #4f46e5;">Loading...</div>
                 </div>
             </div>
         </div>
@@ -44,124 +50,144 @@
                     <tr>
                         <th>Task ID</th>
                         <th>Task Heading Title</th>
-                        <th>Description / Assignment Summary</th>
-                        <th>Progress Node State Status</th>
+                        <th>Description</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody id="userTasksTableBody">
-                    <tr><td colspan="4" style="text-align:center; color:#64748b;">Parsing assigned task logs streaming context...</td></tr>
+                    <tr><td colspan="4" style="text-align:center;">Loading tasks...</td></tr>
                 </tbody>
             </table>
         </div>
-
     </div>
 
-    <!-- Scripts Integration Pipeline Layer -->
+    <!-- 1. Ensure UserService.js is loaded first -->
     <script src="UserService.js"></script>
+
     <script>
-        const API_URL = "http://localhost:5108/api";
-        const userService = new UserService(API_URL);
-        
-        let currentUserId = null;
+    const API_URL = "http://localhost:5108/api";
+const userService = new UserService(API_URL);
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            // 1. Unpack incoming query parameters from active page route address (?userId=X)
-            const urlParams = new URLSearchParams(window.location.search);
-            currentUserId = urlParams.get('userId');
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Populate the User Dropdown first
+    await populateUserDropdown();
 
-            if (!currentUserId) {
-                alert("No Target Profile ID criteria was specified inside application route parameters.");
-                window.location.href = "users.html";
-                return;
+    // 2. Check if a userId is already in the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('userId');
+
+    if (userId) {
+        document.getElementById('userSelect').value = userId;
+        await loadUserData(userId);
+    }
+});
+
+// Function to fill the dropdown with all users
+async function populateUserDropdown() {
+    const select = document.getElementById('userSelect');
+    try {
+        const result = await userService.getAllUsers();
+        // Unpack users (handle {success: true, data: [...]})
+        const users = result.data || result;
+
+        if (Array.isArray(users)) {
+            users.forEach(user => {
+                const opt = document.createElement('option');
+                opt.value = user.userId || user.id || user.UserId;
+                opt.textContent = user.userName || user.username || user.UserName;
+                select.appendChild(opt);
+            });
+        }
+    } catch (err) {
+        console.error("Failed to load users for dropdown", err);
+    }
+
+    // Change event: When user picks a name, load their tasks
+    select.addEventListener('change', (e) => {
+        const selectedId = e.target.value;
+        if (selectedId) {
+            // Update URL without refreshing page (optional but good practice)
+            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?userId=' + selectedId;
+            window.history.pushState({path:newUrl},'',newUrl);
+            
+            loadUserData(selectedId);
+        }
+    });
+}
+
+async function loadUserData(id) {
+    await loadUserProfileSummary(id);
+    await loadUserAssignedTasksList(id);
+}
+
+// Updated Task Loader with Deep Unpacking for your specific API structure
+async function loadUserAssignedTasksList(id) {
+    const tbody = document.getElementById('userTasksTableBody');
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Loading tasks...</td></tr>';
+    
+    try {
+        const result = await userService.getTasksByUserId(id);
+        console.log("Raw API Result:", result);
+
+        let tasks = [];
+
+        // BASED ON YOUR CONSOLE LOG: result is { success: true, data: { ... } }
+        if (result && result.data) {
+            if (Array.isArray(result.data)) {
+                tasks = result.data;
+            } else if (result.data.tasks && Array.isArray(result.data.tasks)) {
+                // If data is an object containing a tasks array
+                tasks = result.data.tasks;
+            } else if (typeof result.data === 'object' && !Array.isArray(result.data)) {
+                // If it's a single task object, wrap it in an array
+                tasks = [result.data];
             }
+        } else if (Array.isArray(result)) {
+            tasks = result;
+        }
 
-            // 2. Hydrate workspace elements simultaneously
-            await loadUserProfileSummary(currentUserId);
-            await loadUserAssignedTasksList(currentUserId);
+        tbody.innerHTML = ''; 
+
+        if (tasks.length === 0 || !tasks[0].taskId && !tasks[0].id) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px;">No tasks assigned to this user.</td></tr>`;
+            return;
+        }
+
+        tasks.forEach(task => {
+            const tId = task.taskId || task.TaskId || task.id || 'N/A';
+            const tTitle = task.title || task.Title || task.taskName || 'Untitled';
+            const tDesc = task.description || task.Description || 'No description.';
+            const tStatus = task.status || task.Status || 'Pending';
+
+            const statusClass = String(tStatus).toLowerCase().includes('complete') ? 'done' : 'todo';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>#${tId}</td>
+                <td><strong>${tTitle}</strong></td>
+                <td style="color:#475569; font-size:13px;">${tDesc}</td>
+                <td><span class="badge ${statusClass}">${tStatus}</span></td>
+            `;
+            tbody.appendChild(tr);
         });
 
-        // Pulls target user context fields via GET /api/User/{userId}
-        async function loadUserProfileSummary(id) {
-            try {
-                // Fixed: Route path capitalized to /User to prevent case-sensitive 404 blocks
-                const response = await fetch(`${API_URL}/User/${id}`);
-                if (!response.ok) throw new Error("Could not resolve profile entity record.");
-                
-                const jsonResult = await response.json();
-                
-                // Account for standard wrapped JSON envelope models (.data) vs raw data items
-                const user = jsonResult.data || jsonResult;
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">Error fetching tasks.</td></tr>`;
+    }
+}
 
-                document.getElementById('lblUserId').innerText = `#${user.userId || user.id}`;
-                document.getElementById('lblUserName').innerText = user.userName || user.username || 'N/A';
-                document.getElementById('lblUserEmail').innerText = user.userEmail || user.email || 'N/A';
-
-            } catch (err) {
-                console.error("Account hydration trace crash:", err);
-                document.getElementById('lblUserName').innerText = "Error loading user profile information.";
-            }
-        }
-
-        // Pulls the assigned tasks collections matrix via nested route GET /api/User/{userId}/tasks
-        async function loadUserAssignedTasksList(id) {
-            const tbody = document.getElementById('userTasksTableBody');
-            
-            try {
-                // Reuses your pre-existing method implemented inside your custom UserService architecture
-                const jsonResult = await userService.getTasksByUserId(id);
-                
-                console.log("[Debug Tasks Payload]", jsonResult); // View structure layout inside browser dev tools (F12)
-
-                let assignedTasksArray = [];
-                
-                // 🛠️ FIX 1: Robust unpacking to completely protect against double enveloped .data configurations
-                if (jsonResult && Array.isArray(jsonResult.data)) {
-                    assignedTasksArray = jsonResult.data;
-                } else if (jsonResult && jsonResult.data && Array.isArray(jsonResult.data.data)) {
-                    assignedTasksArray = jsonResult.data.data;
-                } else if (Array.isArray(jsonResult)) {
-                    assignedTasksArray = jsonResult;
-                } else if (jsonResult && typeof jsonResult === 'object') {
-                    // Fallback checking if it's a single wrapped task object or root level property array fallback
-                    assignedTasksArray = jsonResult.tasks || (jsonResult.id || jsonResult.taskId ? [jsonResult] : []);
-                }
-
-                tbody.innerHTML = ''; // Clear loading notification row
-
-                if (!assignedTasksArray || assignedTasksArray.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b; padding: 20px;">This user has no tasks assigned to them.</td></tr>`;
-                    return;
-                }
-
-                // Inject each individual task record item row cleanly into layout view matrix
-                assignedTasksArray.forEach(task => {
-                    // 🛠️ FIX 2: Case-Insensitive fallback resolution map layers to completely prevent 'undefined' texts
-                    const taskId = task.taskId || task.id || 'N/A';
-                    const title = task.title || task.taskTitle || task.taskName || 'Untitled';
-                    const desc = task.description || task.taskDescription || 'No summary text overview provided.';
-                    const currentStatus = task.status || task.taskStatus || 'Todo';
-
-                    // Assign badge classes dynamically matching task interface properties
-                    let styleClass = 'todo';
-                    const normalizedStatus = String(currentStatus).toLowerCase().trim();
-                    if (normalizedStatus.includes('progress')) styleClass = 'progress';
-                    if (normalizedStatus === 'done' || normalizedStatus === 'completed') styleClass = 'done';
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>#${taskId}</td>
-                        <td><strong>${title}</strong></td>
-                        <td style="color:#475569; font-size:13px; max-width: 400px;">${desc}</td>
-                        <td><span class="badge ${styleClass}">${currentStatus}</span></td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-
-            } catch (err) {
-                console.error("Task list matrix ingestion workflow error context:", err);
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">Failed to retrieve task data stream lists from server backend.</td></tr>`;
-            }
-        }
+async function loadUserProfileSummary(id) {
+    try {
+        const result = await userService.getUserById(id);
+        const user = result.data || result;
+        
+        document.getElementById('lblUserId').innerText = `#${user.userId || user.UserId || user.id}`;
+        document.getElementById('lblUserName').innerText = user.userName || user.UserName || user.username || 'N/A';
+        document.getElementById('lblUserEmail').innerText = user.userEmail || user.UserEmail || user.email || 'N/A';
+    } catch (err) {
+        console.error("Profile Load Error:", err);
+    }
+}
     </script>
 </body>
 </html>

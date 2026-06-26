@@ -58,11 +58,18 @@ namespace TaskManagementSystem.Services.Implementation
                 errorMessage = "Task Title is required.";
                 return false;
             }
-
-            if (string.IsNullOrWhiteSpace(dto.Description))
+            if (dto.Title.Length > 100)
             {
-                errorMessage = "Task Description is required.";
+                errorMessage = "Task Titel cannot exeed 100 charcters.";
                 return false;
+            }
+            if (!string.IsNullOrWhiteSpace(dto.Description))
+            {
+                if (dto.Description.Length > 500)
+                {
+                    errorMessage = "Task Description cannot exeed 500 charcters.";
+                    return false;
+                }
             }
 
             if (string.IsNullOrWhiteSpace(dto.Status))
@@ -98,7 +105,7 @@ namespace TaskManagementSystem.Services.Implementation
                 errorMessage = "Failed to save the task to the database.";
                 return false;
             }
-
+                
             // 4. Map Saved Entity to Response DTO (Separate Method)
             if (createdTask != null)
             {
@@ -171,10 +178,16 @@ namespace TaskManagementSystem.Services.Implementation
                 errorMessage = "A valid Task Id is required.";
                 return false;
             }
-
-            // 3. Call Repository UpdateStatus passing taskId explicitly
-            // 2. Map DTO to Model
             bool isStatusUpdated = _taskRepository.UpdateStatus(taskId,dto.Status );
+          
+
+            var updatedTaskModel = _taskRepository.GetTaskById(taskId);
+
+            if (updatedTaskModel != null)
+            {
+                 task = MapToResponseDto(updatedTaskModel);
+            }
+
             return isStatusUpdated;
         }
         public bool DeleteTask(int taskId, out TaskItemResponseDto? task, out string errorMessage)

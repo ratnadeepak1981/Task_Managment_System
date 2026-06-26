@@ -160,40 +160,12 @@
                 }
 }
 
-        // Global scoped event handler for inline table actions
-        async function viewUserTasks(userId, username)
+           // Replace your old viewUserTasks function with this redirect logic
+        function viewUserTasks(userId, username) 
         {
-            modalTitle.innerText = `Tasks for ${username}`;
-            modalTaskContainer.innerHTML = 'Loading tasks...';
-            taskModal.style.display = 'flex';
-
-            try {
-                // Reuses your existing completed getTasksByUserId method inside UserService
-                const tasks = await userService.getTasksByUserId(userId);
-                
-                modalTaskContainer.innerHTML = '';
-                if (!tasks || tasks.length === 0) {
-                    modalTaskContainer.innerHTML = '<p>This user has no tasks assigned.</p>';
-                    return;
-                }
-                // 2. Target the nested data array directly
-               //const taskArray = Array.isArray(tasks.data) ? tasks.data : [tasks.data];
-              
-                const taskArray = Array.isArray(tasks) ? tasks : [tasks];
-                taskArray.forEach(task =>
-                {
-                    const div = document.createElement('div');
-                    div.className = 'task-mini-card';
-                    div.innerHTML = `
-                        <h4>${task.title || 'Untitled'}</h4>
-                        <p style="margin:4px 0; font-size:13px; color:#555;">${task.description || 'No description provided.'}</p>
-                        <small>Status: <strong>${task.status || 'Pending'}</strong></small>
-                    `;
-                    modalTaskContainer.appendChild(div);
-                });
-            } catch (error) {
-                modalTaskContainer.innerHTML = `<p style="color:red;">Error loading tasks for this user.</p>`;
-            }
+            // Encodes parameters cleanly to ensure spaces or special characters do not break URLs
+            const targetUrl = `user-detail.html?userId=${userId}&username=${encodeURIComponent(username)}`;
+            window.location.href = targetUrl;
         }
     </script>
 </body>

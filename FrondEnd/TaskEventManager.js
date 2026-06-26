@@ -22,21 +22,31 @@ class TaskEventManager {
 
     setupEventListeners() {
         // Form Submission (Create / Update)
-        this.taskForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await this.handleFormSubmit();
-        });
+        if (this.taskForm) {
+            this.taskForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await this.handleFormSubmit();
+            });
+        }
 
         // Cancel Edit Mode
-        this.btnCancelEdit.addEventListener('click', () => this.resetForm());
+        if (this.btnCancelEdit) {
+            this.btnCancelEdit.addEventListener('click', () => this.resetForm());
+        }
 
         // Search Features
-        this.btnSearch.addEventListener('click', async () => await this.handleSearch());
-        this.btnClearSearch.addEventListener('click', async () => {
-            this.searchNameInput.value = '';
-            await this.loadAllTasks();
-        });
+        if (this.btnSearch) {
+            this.btnSearch.addEventListener('click', async () => await this.handleSearch());
+        }
+        
+        if (this.btnClearSearch) {
+            this.btnClearSearch.addEventListener('click', async () => {
+                if (this.searchNameInput) this.searchNameInput.value = '';
+                await this.loadAllTasks();
+            });
+        }
     }
+
 
     async loadAllTasks() {
         try {

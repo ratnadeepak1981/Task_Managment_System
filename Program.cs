@@ -12,6 +12,8 @@ namespace TaskManagementSystem
         {
             var builder = WebApplication.CreateBuilder(args);
 
+
+
             // Add CORS services and define a policy
             builder.Services.AddCors(options =>
             {
@@ -29,6 +31,7 @@ namespace TaskManagementSystem
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+           
 
             // 1. Add services to the container (BEFORE builder.Build)
             builder.Services.AddScoped<ITaskService, TaskService>();

@@ -8,5 +8,6 @@ namespace TaskManagementSystem.Repositories.Interface
         User? GetUserById(int userId);
         UserWithTasks? GetTasksByUserId(int userId);
         User Add(User user);
+        public bool GetUserByEmail(string userEmail);
     }
 }
